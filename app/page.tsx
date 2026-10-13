@@ -140,7 +140,7 @@ export default function Home() {
       <img
         src="/profile.jpg"
         alt="Janine Profile ID"
-        className="w-full h-full object-cover select-none pointer-events-none"
+        className="w-gfull h-full object-cover select-none pointer-events-none"
       />
     </div>
 
@@ -600,7 +600,7 @@ export default function Home() {
 
       {/* FOOTER COPYRIGHT */}
       <footer className="border-t border-gray-900 py-6 text-center text-xs text-gray-500">
-        <p>© {new Date().getFullYear()} Janine. All rights reserved.</p>
+        <p>© 2026 Janine. All rights reserved.</p>
       </footer>
     </main>
   );
