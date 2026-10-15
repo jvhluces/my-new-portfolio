@@ -2,7 +2,8 @@
 
 
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -433,7 +434,7 @@ export default function Home() {
 
               tags={["Python", "OpenCV", "MediaPipe"]}
 
-              githubUrl="https://github.com/jvhluces/boring "
+              githubUrl="https://github.com/jvhluces/boring"
 
               imageSrc="/projects/python.png"
 
@@ -1203,7 +1204,6 @@ export default function Home() {
 
 }
 
-import { useEffect } from "react"; // Tiyaking kasama sa react imports sa taas
 
 
 
@@ -1408,21 +1408,27 @@ function ProjectCard({
       <div className="space-y-4">
 
         {imageSrc ? (
-
-          <div className="w-full h-44 rounded-2xl bg-gray-950 flex items-center justify-center border border-gray-800 text-cyan-400 font-semibold text-sm">
-
-            <img src={imageSrc} alt={title} className="w-full h-full object-cover rounded-2xl" />
-
-          </div>
-
+          <Link
+            href={`/projects/${projectId}`}
+            aria-label={`View details for ${title}`}
+            className="group relative block h-44 w-full overflow-hidden rounded-2xl border border-gray-800 bg-gray-950 focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+          >
+            <img
+              src={imageSrc}
+              alt={`${title} project preview`}
+              className="h-full w-full rounded-2xl object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-gray-950/95 via-gray-950/10 to-transparent p-4">
+              <span className="text-sm font-bold text-white">View Project Details</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full border border-cyan-300/30 bg-gray-950/80 text-cyan-300 transition-transform group-hover:translate-x-1">
+                ↗
+              </span>
+            </div>
+          </Link>
         ) : (
-
           <div className="w-full h-44 rounded-2xl bg-gray-950 flex items-center justify-center border border-gray-800 text-cyan-400 font-semibold text-sm">
-
             {title} Preview
-
           </div>
-
         )}
 
 
