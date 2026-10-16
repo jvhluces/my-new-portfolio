@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useParams } from "next/navigation";
 
 const projects = {
   "python-hand-tracking": {
@@ -77,9 +74,17 @@ const projects = {
 
 type ProjectSlug = keyof typeof projects;
 
-export default function ProjectDetailsPage() {
-  const params = useParams<{ slug: string }>();
-  const project = projects[params.slug as ProjectSlug];
+export function generateStaticParams() {
+  return Object.keys(projects).map((slug) => ({ slug }));
+}
+
+export default async function ProjectDetailsPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const project = projects[slug as ProjectSlug];
 
   if (!project) {
     return (
