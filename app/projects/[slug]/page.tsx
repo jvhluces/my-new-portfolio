@@ -88,9 +88,9 @@ export default async function ProjectDetailsPage({
 
   if (!project) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-[#030712] px-6 text-white">
+      <main className="flex min-h-screen items-center justify-center bg-[#0F0F0F] px-6 text-[#F5F0E6]">
         <div className="max-w-lg text-center">
-          <p className="text-sm uppercase tracking-[0.25em] text-cyan-400">
+          <p className="text-sm uppercase tracking-[0.25em] text-[#F5F0E6]">
             Project not found
           </p>
           <h1 className="mt-3 text-3xl font-bold">
@@ -98,7 +98,7 @@ export default async function ProjectDetailsPage({
           </h1>
           <Link
             href="/#projects"
-            className="mt-6 inline-flex rounded-full bg-cyan-400 px-6 py-3 font-bold text-black transition hover:bg-cyan-300"
+            className="mt-6 inline-flex rounded-full bg-[#F5F0E6] px-6 py-3 font-bold text-[#0F0F0F] transition hover:bg-[#E8DFD0]"
           >
             Back to Projects
           </Link>
@@ -108,49 +108,47 @@ export default async function ProjectDetailsPage({
   }
 
   return (
-    <main className="min-h-screen bg-[#030712] text-white">
+    <main className="min-h-screen bg-[#0F0F0F] text-[#F5F0E6]">
       <div className="mx-auto max-w-6xl px-5 py-10 sm:px-8 sm:py-16">
         <Link
           href="/#projects"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 transition hover:text-cyan-300"
+          className="inline-flex items-center gap-2 text-sm text-[#B8B0A0] transition hover:text-[#F5F0E6]"
         >
           <span aria-hidden="true">←</span> Back to Portfolio
         </Link>
 
         <header className="mt-10 max-w-3xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-cyan-400 sm:text-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#F5F0E6] sm:text-sm">
             Project Details / {project.category}
           </p>
           <h1 className="mt-4 text-3xl font-extrabold leading-tight tracking-tight sm:text-5xl">
             {project.title}
           </h1>
-          <p className="mt-5 leading-7 text-gray-400">{project.description}</p>
-
+          <p className="mt-5 leading-7 text-[#D8D0C0]">{project.description}</p>
           <div className="mt-6 flex flex-wrap gap-2">
             {project.tags.map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1.5 text-xs font-semibold text-cyan-200"
+                className="rounded-full border border-[#1E3554]/40 bg-[#1E3554]/30 px-3 py-1.5 text-xs font-semibold text-[#F5F0E6]"
               >
                 {tag}
               </span>
             ))}
           </div>
-
-          <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-amber-400/20 bg-amber-400/10 px-3 py-1.5 text-xs font-semibold text-amber-200">
-            <span className="h-2 w-2 rounded-full bg-amber-300" />
+          <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#F5F0E6]/30 bg-[#F5F0E6]/10 px-3 py-1.5 text-xs font-semibold text-[#F5F0E6]">
+            <span className="h-2 w-2 rounded-full bg-[#F5F0E6]" />
             {project.status}
           </div>
         </header>
 
-        <section className="mt-10 overflow-hidden rounded-3xl border border-gray-800 bg-gray-900/60 shadow-2xl">
-          <div className="flex items-center gap-2 border-b border-gray-800 px-4 py-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-            <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
-            <span className="h-2.5 w-2.5 rounded-full bg-green-400" />
-            <span className="ml-3 text-xs text-gray-500">Project Preview</span>
+        <section className="mt-10 overflow-hidden rounded-3xl border border-[#1E3554] bg-[#1A1A1A]/60 shadow-2xl">
+          <div className="flex items-center gap-2 border-b border-[#1E3554] px-4 py-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#E8DFD0]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#F5F0E6]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#E8DFD0]" />
+            <span className="ml-3 text-xs text-[#888888]">Project Preview</span>
           </div>
-          <div className="bg-gray-950 p-3 sm:p-6">
+          <div className="bg-[#0A0A0A] p-3 sm:p-6">
             <img
               src={project.image}
               alt={`${project.title} project preview`}
@@ -164,17 +162,16 @@ export default async function ProjectDetailsPage({
             href={project.githubUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-cyan-400 px-5 py-4 font-bold text-gray-950 transition hover:bg-cyan-300"
+            className="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl bg-[#F5F0E6] px-5 py-4 font-bold text-[#0F0F0F] transition hover:bg-[#E8DFD0]"
           >
             <span aria-hidden="true">↗</span> View GitHub Repository
           </a>
-
           {project.liveDemo ? (
             <a
               href={project.liveDemo}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-cyan-400/40 bg-cyan-400/10 px-5 py-4 font-bold text-cyan-200 transition hover:bg-cyan-400/20"
+              className="inline-flex min-h-14 items-center justify-center gap-3 rounded-2xl border border-[#F5F0E6]/40 bg-[#F5F0E6]/10 px-5 py-4 font-bold text-[#F5F0E6] transition hover:bg-[#F5F0E6]/20"
             >
               <span aria-hidden="true">▶</span> Open Live Demo
             </a>
@@ -182,7 +179,7 @@ export default async function ProjectDetailsPage({
             <div
               aria-disabled="true"
               title="Add the deployed project URL to enable this button."
-              className="inline-flex min-h-14 cursor-not-allowed items-center justify-center gap-3 rounded-2xl border border-gray-700 bg-gray-900 px-5 py-4 font-semibold text-gray-500"
+              className="inline-flex min-h-14 cursor-not-allowed items-center justify-center gap-3 rounded-2xl border border-[#2A2A2A] bg-[#1A1A1A] px-5 py-4 font-semibold text-[#888888]"
             >
               <span aria-hidden="true">◷</span> Live Demo Coming Soon
             </div>
@@ -190,49 +187,48 @@ export default async function ProjectDetailsPage({
         </section>
 
         <section className="mt-12 grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-3xl border border-gray-800 bg-gray-900/50 p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400">
+          <div className="rounded-3xl border border-[#1E3554] bg-[#1A1A1A]/50 p-6 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#F5F0E6]">
               Overview
             </p>
             <h2 className="mt-3 text-2xl font-bold">Project Highlights</h2>
             <ul className="mt-6 space-y-4">
               {project.features.map((feature) => (
-                <li key={feature} className="flex gap-3 text-sm text-gray-300">
-                  <span className="text-cyan-400" aria-hidden="true">✓</span>
+                <li key={feature} className="flex gap-3 text-sm text-[#D8D0C0]">
+                  <span className="text-[#F5F0E6]" aria-hidden="true">✓</span>
                   <span>{feature}</span>
                 </li>
               ))}
             </ul>
           </div>
-
-          <div className="rounded-3xl border border-gray-800 bg-gray-900/50 p-6 sm:p-8">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-400">
+          <div className="rounded-3xl border border-[#1E3554] bg-[#1A1A1A]/50 p-6 sm:p-8">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#F5F0E6]">
               Getting Started
             </p>
             <h2 className="mt-3 text-2xl font-bold">How to Try It</h2>
             <ul className="mt-6 space-y-3">
               {project.requirements.map((requirement) => (
-                <li key={requirement} className="flex gap-3 text-sm text-gray-300">
-                  <span className="text-cyan-400" aria-hidden="true">•</span>
+                <li key={requirement} className="flex gap-3 text-sm text-[#D8D0C0]">
+                  <span className="text-[#F5F0E6]" aria-hidden="true">•</span>
                   <span>{requirement}</span>
                 </li>
               ))}
             </ul>
-            <p className="mt-5 text-sm leading-7 text-gray-400">
+            <p className="mt-5 text-sm leading-7 text-[#B8B0A0]">
               {project.instructions}
             </p>
             <a
               href={project.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-5 inline-flex text-sm font-semibold text-cyan-300 hover:text-cyan-200 hover:underline"
+              className="mt-5 inline-flex text-sm font-semibold text-[#F5F0E6] hover:text-[#E8DFD0] hover:underline"
             >
               Read the source code and setup files →
             </a>
           </div>
         </section>
 
-        <footer className="mt-14 border-t border-gray-800 pt-6 text-center text-xs text-gray-600">
+        <footer className="mt-14 border-t border-[#1E3554] pt-6 text-center text-xs text-[#666666]">
           © 2026 Janine Luces · Project Portfolio
         </footer>
       </div>
