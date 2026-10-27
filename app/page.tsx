@@ -6,6 +6,8 @@ import {
   AnimatePresence,
   useScroll,
   useSpring,
+  useTransform,
+  useAnimation,
   useReducedMotion,
   type Variants,
 } from "framer-motion";
@@ -23,6 +25,16 @@ const fadeUp: Variants = {
 const stagger: Variants = {
   hidden: {},
   show: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+};
+
+/* Navbar: logo + menu appear first, one after another */
+const navParent: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.5, staggerChildren: 0.09, delayChildren: 0.15 } },
+};
+const navChild: Variants = {
+  hidden: { opacity: 0, y: -14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
 };
 
 const NAV_ITEMS = [
@@ -80,42 +92,137 @@ const SOCIALS = [
     invert: true
   },
 ];
+
 const ROLES = ["Aspiring Backend Developer", "API Builder", "Database Designer"];
 
-/* ---------- Small helpers ---------- */
-function Typewriter({ words }: { words: string[] }) {
+/* ---------- Hero intro timeline (seconds) ---------- */
+const T = {
+  welcome: 0.8,   // "WELCOME TO MY PORTFOLIO"
+  name: 1.5,      // "Hi, I'm Janine"
+  card: 2.0,      // ID card drops in
+  typing: 3.0,    // typewriter starts
+  sway: 3.2,      // card starts swinging / floating
+};
+
+/* ---------- Typewriter ---------- */
+function Typewriter({
+  words,
+  active,
+  onWordComplete,
+}: {
+  words: string[];
+  active: boolean;
+  onWordComplete?: (index: number) => void;
+}) {
   const [index, setIndex] = useState(0);
   const [text, setText] = useState("");
-  const [deleting, setDeleting] = useState(false);
+  const [phase, setPhase] = useState<"typing" | "holding" | "erasing">("typing");
+  const [pulse, setPulse] = useState(0);
+  const controls = useAnimation();
+  const cb = useRef(onWordComplete);
+  cb.current = onWordComplete;
+
+  const current = words[index];
 
   useEffect(() => {
-    const current = words[index];
-    const delay = deleting ? 35 : text === current ? 1600 : 70;
-    const t = setTimeout(() => {
-      if (!deleting && text === current) {
-        setDeleting(true);
-      } else if (deleting && text === "") {
-        setDeleting(false);
-        setIndex((i) => (i + 1) % words.length);
+    if (!active) return;
+    let t: ReturnType<typeof setTimeout> | undefined;
+
+    if (phase === "typing") {
+      if (text.length < current.length) {
+        t = setTimeout(() => setText(current.slice(0, text.length + 1)), 80);
       } else {
-        setText(current.slice(0, text.length + (deleting ? -1 : 1)));
+        setPhase("holding");
+        setPulse((p) => p + 1);
+        cb.current?.(index);
       }
-    }, delay);
-    return () => clearTimeout(t);
-  }, [text, deleting, index, words]);
+    } else if (phase === "holding") {
+      t = setTimeout(() => setPhase("erasing"), 1900);
+    } else {
+      if (text.length > 0) {
+        t = setTimeout(() => setText(current.slice(0, text.length - 1)), 55);
+      } else {
+        setIndex((i) => (i + 1) % words.length);
+        setPhase("typing");
+      }
+    }
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [active, phase, text, current, index, words]);
+
+  /* "done" moment: slight grow + shine when a word is fully typed */
+  useEffect(() => {
+    if (pulse === 0) return;
+    controls.start({
+      scale: [1, 1.07, 1],
+      textShadow: [
+        "0 0 0px rgba(245,240,230,0)",
+        "0 0 20px rgba(245,240,230,0.75)",
+        "0 0 0px rgba(245,240,230,0)",
+      ],
+      transition: { duration: 0.95, ease: "easeInOut" },
+    });
+  }, [pulse, controls]);
+
+  /* progress 0 → 1: drives blur / size / opacity while typing AND erasing */
+  const p = current.length ? text.length / current.length : 0;
 
   return (
-    <span>
-      {text}
+    <span className="inline-flex items-center">
+      <motion.span animate={controls} className="inline-block origin-center lg:origin-left">
+        <span
+          className="inline-block origin-center lg:origin-left"
+          style={{
+            filter: `blur(${((1 - p) * 4).toFixed(2)}px)`,
+            transform: `scale(${(0.94 + 0.06 * p).toFixed(3)})`,
+            opacity: 0.55 + 0.45 * p,
+            transition: "filter 140ms linear, transform 140ms linear, opacity 140ms linear",
+          }}
+        >
+          {text}
+        </span>
+      </motion.span>
       <motion.span
         animate={{ opacity: [1, 0, 1] }}
         transition={{ repeat: Infinity, duration: 1 }}
-        className="ml-0.5 inline-block w-[2px] h-[1em] align-middle bg-[#E8DFD0]"
+        className="ml-1 inline-block w-[2px] h-[1em] bg-[#E8DFD0]"
       />
     </span>
   );
 }
 
+/* ---------- Background: faint drifting code + dot grid ---------- */
+const GLYPHS = ["{ }", "</>", "01", "=>", "def", "SELECT", "()", "[]", "php", "&&", "fn", "0x", "git", "::"];
+
+function CodeBackdrop({ reduce }: { reduce: boolean | null }) {
+  return (
+    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+      <motion.div
+        className="absolute inset-0"
+        style={{
+          backgroundImage: "radial-gradient(rgba(245,240,230,0.07) 1px, transparent 1px)",
+          backgroundSize: "34px 34px",
+        }}
+        animate={reduce ? undefined : { backgroundPosition: ["0px 0px", "34px 34px"] }}
+        transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+      />
+      {GLYPHS.map((g, i) => (
+        <motion.span
+          key={i}
+          className="absolute font-mono text-xs sm:text-sm text-[#F5F0E6]"
+          style={{ left: `${(i * 37 + 8) % 96}%`, top: `${(i * 53 + 10) % 92}%`, opacity: 0.05 }}
+          animate={reduce ? undefined : { y: [0, -90, 0], x: [0, i % 2 ? 14 : -14, 0], opacity: [0.03, 0.1, 0.03] }}
+          transition={{ duration: 20 + (i % 5) * 5, repeat: Infinity, ease: "easeInOut", delay: i * 0.6 }}
+        >
+          {g}
+        </motion.span>
+      ))}
+    </div>
+  );
+}
+
+/* ---------- Small helpers ---------- */
 function SectionHeader({ eyebrow, first, second, text }: { eyebrow: string; first: string; second: string; text?: string }) {
   return (
     <motion.div variants={fadeUp}>
@@ -147,7 +254,6 @@ function TechTile({ name, icon, invert, index }: { name: string; icon: string; i
       transition={{ type: "spring", stiffness: 300, damping: 18 }}
       className="group relative flex flex-col items-center justify-center gap-3 rounded-2xl border border-[#2A2A2A] bg-[#222222]/70 px-3 py-5 hover:border-[#F5F0E6]/60 hover:bg-[#F5F0E6]/[0.06] hover:shadow-[0_0_25px_rgba(245,240,230,0.18)] transition-colors"
     >
-      {/* gentle idle float, each tile offset so they don't move in sync */}
       <motion.img
         src={icon}
         alt={`${name} logo`}
@@ -169,10 +275,29 @@ export default function Home() {
   const [isOpen, setIsOpen] = useState(false);
   const [active, setActive] = useState("home");
   const [sending, setSending] = useState(false);
+
+  /* hero choreography state */
+  const [typing, setTyping] = useState(false);
+  const [swayOn, setSwayOn] = useState(false);
+  const [firstWordDone, setFirstWordDone] = useState(false);
+  const [flash, setFlash] = useState(0);
+  const [cardHover, setCardHover] = useState(false);
+
   const reduce = useReducedMotion();
 
-  const { scrollYProgress } = useScroll();
+  const { scrollYProgress, scrollY } = useScroll();
   const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 24, restDelta: 0.001 });
+  /* ID card lags behind the page while scrolling → feels deeper */
+  const cardParallax = useTransform(scrollY, [0, 900], [0, reduce ? 0 : 140]);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setTyping(true), T.typing * 1000);
+    const t2 = setTimeout(() => setSwayOn(true), T.sway * 1000);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []);
 
   /* smooth scroll + active section tracking */
   useEffect(() => {
@@ -196,6 +321,11 @@ export default function Home() {
     setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth" }), 100);
   };
 
+  const handleWordComplete = () => {
+    setFirstWordDone(true);
+    setFlash((f) => f + 1);
+  };
+
   const handleSend = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget;
@@ -216,6 +346,21 @@ export default function Home() {
   const inputClass =
     "w-full px-4 py-3 rounded-xl bg-[#0A0A0A]/90 border border-[#2A2A2A] text-[#F5F0E6] placeholder-[#888888] focus:outline-none focus:border-[#F5F0E6] focus:ring-1 focus:ring-[#F5F0E6] transition-all";
 
+  /* card motion: sway + float, or lift when hovered */
+  const swing = swayOn && !cardHover && !reduce;
+  const cardAnimate = cardHover
+    ? { rotate: 0, y: -12, scale: 1.03 }
+    : swing
+    ? { rotate: [0, 3.5, -3.5, 2.5, -2.5, 0], y: [0, -10, 0], scale: 1 }
+    : { rotate: 0, y: 0, scale: 1 };
+  const cardTransition = swing
+    ? {
+        rotate: { repeat: Infinity, duration: 8, ease: "easeInOut" as const },
+        y: { repeat: Infinity, duration: 4.5, ease: "easeInOut" as const },
+        scale: { duration: 0.4 },
+      }
+    : { type: "spring" as const, stiffness: 140, damping: 16 };
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#0F0F0F] text-[#F5F0E6] selection:bg-[#E8DFD0] selection:text-[#0F0F0F] pt-20">
       {/* Scroll progress bar */}
@@ -224,7 +369,7 @@ export default function Home() {
         className="fixed top-0 left-0 right-0 z-[60] h-[3px] origin-left bg-gradient-to-r from-[#E8DFD0] to-[#F5F0E6]"
       />
 
-      {/* Ambient background glow */}
+      {/* Background: glow blobs + faint code / dots */}
       <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
         <motion.div
           animate={reduce ? undefined : { x: [0, 60, 0], y: [0, 40, 0] }}
@@ -237,29 +382,33 @@ export default function Home() {
           className="absolute -bottom-48 -right-40 h-[32rem] w-[32rem] rounded-full bg-[#E8DFD0]/[0.04] blur-3xl"
         />
       </div>
+      <CodeBackdrop reduce={reduce} />
 
-      {/* NAVIGATION BAR */}
+      {/* NAVIGATION BAR — appears first */}
       <motion.nav
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.7, ease: EASE }}
+        variants={navParent}
+        initial="hidden"
+        animate="show"
         className="fixed top-0 left-0 right-0 z-50 bg-[#0A0A0A]/80 backdrop-blur-xl border-b border-[#2A2A2A]/60 px-6 md:px-8 py-4"
       >
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <a href="#home" className="text-xl font-extrabold text-[#F5F0E6] tracking-wider">
+          <motion.a variants={navChild} href="#home" className="text-xl font-extrabold text-[#F5F0E6] tracking-wider">
             Jah<span className="text-[#E8DFD0]">.</span>
-          </a>
+          </motion.a>
 
           <div className="hidden md:flex items-center space-x-8 text-sm font-medium">
             {NAV_ITEMS.filter((i) => i.id !== "contact").map((item) => (
-              <a
+              <motion.a
                 key={item.id}
+                variants={navChild}
                 href={`#${item.id}`}
-                className={`relative py-1 transition-colors ${
+                className={`group relative py-1 transition-colors ${
                   active === item.id ? "text-[#F5F0E6]" : "text-[#E8DFD0]/70 hover:text-[#F5F0E6]"
                 }`}
               >
                 {item.name}
+                {/* hover line: grows from the center to both ends */}
+                <span className="pointer-events-none absolute left-0 right-0 -bottom-0.5 h-px origin-center scale-x-0 bg-[#F5F0E6]/80 transition-transform duration-300 ease-out group-hover:scale-x-100" />
                 {active === item.id && (
                   <motion.span
                     layoutId="nav-underline"
@@ -267,20 +416,37 @@ export default function Home() {
                     transition={{ type: "spring", stiffness: 380, damping: 30 }}
                   />
                 )}
-              </a>
+              </motion.a>
             ))}
           </div>
 
-          <motion.a
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.96 }}
-            href="#contact"
-            className="hidden md:inline-block px-5 py-2 text-xs font-bold rounded-full bg-[#F5F0E6] text-[#0F0F0F] hover:bg-[#E8DFD0] transition-colors shadow-[0_0_15px_rgba(245,240,230,0.2)]"
-          >
-            Hire Me
-          </motion.a>
+          <motion.div variants={navChild} className="hidden md:block">
+            {/* "Hire Me" gives a faint flash every few seconds */}
+            <motion.a
+              href="#contact"
+              initial={{ boxShadow: "0 0 15px rgba(245,240,230,0.2)" }}
+              animate={
+                reduce
+                  ? undefined
+                  : {
+                      boxShadow: [
+                        "0 0 15px rgba(245,240,230,0.2)",
+                        "0 0 30px rgba(245,240,230,0.6)",
+                        "0 0 15px rgba(245,240,230,0.2)",
+                      ],
+                    }
+              }
+              transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 4.5, ease: "easeInOut", delay: 5 }}
+              whileHover={{ y: -2, scale: 1.06, boxShadow: "0 0 30px rgba(245,240,230,0.55)" }}
+              whileTap={{ scale: 0.94, y: 0 }}
+              className="inline-block px-5 py-2 text-xs font-bold rounded-full bg-[#F5F0E6] text-[#0F0F0F] hover:bg-[#FAF6EF] transition-colors"
+            >
+              Hire Me
+            </motion.a>
+          </motion.div>
 
-          <button
+          <motion.button
+            variants={navChild}
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden text-[#F5F0E6] focus:outline-none p-1"
             aria-label="Toggle Menu"
@@ -301,7 +467,7 @@ export default function Home() {
                 />
               </AnimatePresence>
             </svg>
-          </button>
+          </motion.button>
         </div>
 
         <AnimatePresence>
@@ -345,134 +511,214 @@ export default function Home() {
         <div className="flex flex-col lg:grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
           {/* Profile ID card */}
           <div className="order-1 lg:order-2 relative flex justify-center w-full py-10">
-            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-0.5 h-32 bg-gradient-to-b from-transparent via-[#666666] to-[#E8DFD0]/80 z-0 pointer-events-none" />
-            <motion.div
-              initial={{ y: -120, opacity: 0, rotate: -12 }}
-              animate={{ y: 0, opacity: 1, rotate: reduce ? 0 : [0, 4, -4, 3, -3, 0] }}
-              transition={{
-                y: { type: "spring", stiffness: 90, damping: 11, delay: 0.3 },
-                opacity: { duration: 0.6, delay: 0.3 },
-                rotate: { repeat: Infinity, repeatType: "mirror", duration: 6, ease: "easeInOut", delay: 1.2 },
-              }}
-              whileHover={{ scale: 1.04, rotate: 0 }}
-              whileTap={{ scale: 0.97 }}
-              className="relative z-10 w-64 sm:w-72 lg:w-80 overflow-visible rounded-[1.65rem] border border-[#F5F0E6]/70 bg-[#1A1A1A] p-3.5 shadow-[0_25px_80px_rgba(245,240,230,0.22)] ring-1 ring-white/10 cursor-pointer origin-top"
-            >
-              <div className="absolute -top-5 left-1/2 z-20 -translate-x-1/2 flex h-7 w-12 items-center justify-center rounded-t-lg rounded-b-sm border border-[#888888]/80 bg-gradient-to-b from-[#666666] to-[#1A1A1A] shadow-lg">
-                <div className="h-2.5 w-2.5 rounded-full border border-[#F5F0E6] bg-[#F5F0E6] shadow-[0_0_12px_rgba(245,240,230,0.95)]" />
-              </div>
+            {/* parallax layer: scrolls slower than the page */}
+            <motion.div style={{ y: cardParallax }} className="relative z-10">
+              {/* entrance layer: drops in from the top */}
+              <motion.div
+                initial={{ y: -160, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{
+                  y: { type: "spring", stiffness: 80, damping: 11, delay: T.card },
+                  opacity: { duration: 0.5, delay: T.card },
+                }}
+                className="relative"
+              >
+                <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-0.5 h-32 bg-gradient-to-b from-transparent via-[#666666] to-[#E8DFD0]/80 pointer-events-none" />
 
-              <div className="relative mb-3 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-r from-[#222222] via-[#111111] to-[#222222] px-4 py-3 text-center">
-                <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#F5F0E6] to-transparent" />
-                {/* light sweep across the header */}
+                {/* sway + float layer */}
                 <motion.div
-                  aria-hidden
-                  animate={{ x: ["-120%", "320%"] }}
-                  transition={{ duration: 3.2, repeat: Infinity, repeatDelay: 3, ease: "easeInOut" }}
-                  className="pointer-events-none absolute inset-y-0 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-[#F5F0E6]/15 to-transparent"
-                />
-                <p className="text-[9px] font-bold uppercase tracking-[0.28em] text-[#F5F0E6]">Developer Profile</p>
-                <p className="mt-1 text-sm font-extrabold tracking-wide text-[#FAF6EF]">JANINE LUCES</p>
-                <p className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.18em] text-[#B8B0A0]">Personal Portfolio ID</p>
-              </div>
+                  animate={cardAnimate}
+                  transition={cardTransition}
+                  onHoverStart={() => setCardHover(true)}
+                  onHoverEnd={() => setCardHover(false)}
+                  className="relative w-64 sm:w-72 lg:w-80 origin-top cursor-pointer"
+                >
+                  {/* glow: stronger on hover */}
+                  <motion.div
+                    aria-hidden
+                    animate={{ opacity: cardHover ? 0.85 : 0.35 }}
+                    transition={{ duration: 0.5 }}
+                    className="pointer-events-none absolute -inset-6 -z-10 rounded-[2.5rem] bg-[#F5F0E6]/25 blur-3xl"
+                  />
+                  {/* glow: flashes each time a word finishes typing, then fades back */}
+                  <motion.div
+                    key={flash}
+                    aria-hidden
+                    initial={{ opacity: flash === 0 ? 0 : 0.9 }}
+                    animate={{ opacity: 0 }}
+                    transition={{ duration: 1.8, ease: "easeOut" }}
+                    className="pointer-events-none absolute -inset-8 -z-10 rounded-[3rem] bg-[#F5F0E6]/40 blur-3xl"
+                  />
 
-              <div className="relative h-64 overflow-hidden rounded-xl border border-[#F5F0E6]/25 bg-[#0A0A0A] shadow-inner sm:h-72">
-                <img
-                  src="/profile.jpg"
-                  alt="Janine Luces profile portrait"
-                  className="h-full w-full select-none object-cover object-center pointer-events-none"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#111111]/10" />
-                <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-[#A8D5BA]/20 bg-[#0A0A0A]/80 px-3 py-1.5 backdrop-blur-md">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#A8D5BA] opacity-75" />
-                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#A8D5BA] shadow-[0_0_8px_rgba(168,213,186,0.8)]" />
-                  </span>
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#E8DFD0]">Open to opportunities</span>
-                </div>
-                <div className="absolute right-3 top-3 rounded-md border border-[#F5F0E6]/30 bg-[#0A0A0A]/75 px-2 py-1 text-[8px] font-bold tracking-[0.18em] text-[#E8DFD0] backdrop-blur-md">
-                  ID · 2026
-                </div>
-              </div>
+                  <div className="relative overflow-visible rounded-[1.65rem] border border-[#F5F0E6]/70 bg-[#1A1A1A] p-3.5 shadow-[0_25px_80px_rgba(245,240,230,0.22)] ring-1 ring-white/10">
+                    <div className="absolute -top-5 left-1/2 z-20 -translate-x-1/2 flex h-7 w-12 items-center justify-center rounded-t-lg rounded-b-sm border border-[#888888]/80 bg-gradient-to-b from-[#666666] to-[#1A1A1A] shadow-lg">
+                      <div className="h-2.5 w-2.5 rounded-full border border-[#F5F0E6] bg-[#F5F0E6] shadow-[0_0_12px_rgba(245,240,230,0.95)]" />
+                    </div>
 
-              <div className="mt-3 grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3">
-                <div className="min-w-0">
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#888888]">Specialization</p>
-                  <p className="mt-1 text-xs font-bold text-[#F5F0E6]">Backend Developer</p>
-                  <p className="mt-1 text-[10px] text-[#B8B0A0]">Logic · Data · Reliable Systems</p>
-                </div>
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#F5F0E6]/20 bg-[#F5F0E6]/10">
-                  <span className="font-mono text-sm font-black text-[#F5F0E6]">{"</>"}</span>
-                </div>
-              </div>
+                    <div className="relative mb-3 overflow-hidden rounded-xl border border-white/10 bg-gradient-to-r from-[#222222] via-[#111111] to-[#222222] px-4 py-3 text-center">
+                      <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-[#F5F0E6] to-transparent" />
+                      <p className="text-[9px] font-bold uppercase tracking-[0.28em] text-[#F5F0E6]">Developer Profile</p>
+                      <p className="mt-1 text-sm font-extrabold tracking-wide text-[#FAF6EF]">JANINE LUCES</p>
+                      <p className="mt-0.5 text-[9px] font-medium uppercase tracking-[0.18em] text-[#B8B0A0]">Personal Portfolio ID</p>
+                    </div>
 
-              <div className="mt-3 flex items-end justify-between px-1 pb-1">
-                <div>
-                  <div className="flex h-5 items-stretch gap-[3px] opacity-80">
-                    {[2, 4, 1, 3, 2, 5, 1, 3, 2, 4, 1, 3, 2, 5].map((w, i) => (
-                      <span
-                        key={i}
-                        style={{ width: w }}
-                        className={i % 4 === 2 ? "bg-[#F5F0E6]" : i % 2 ? "bg-[#666666]" : "bg-[#888888]"}
+                    <div className="relative h-64 overflow-hidden rounded-xl border border-[#F5F0E6]/25 bg-[#0A0A0A] shadow-inner sm:h-72">
+                      <img
+                        src="/profile.jpg"
+                        alt="Janine Luces profile portrait"
+                        className="h-full w-full select-none object-cover object-center pointer-events-none"
                       />
-                    ))}
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#111111]/10" />
+
+                      {/* scanner line: top → bottom → top, faint */}
+                      {!reduce && (
+                        <motion.div
+                          aria-hidden
+                          initial={{ top: "0%" }}
+                          animate={{ top: ["0%", "100%", "0%"] }}
+                          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+                          className="pointer-events-none absolute inset-x-0 h-px bg-gradient-to-r from-transparent via-[#F5F0E6]/70 to-transparent opacity-60 shadow-[0_0_10px_rgba(245,240,230,0.5)]"
+                        />
+                      )}
+
+                      <div className="absolute bottom-3 left-3 flex items-center gap-2 rounded-full border border-[#A8D5BA]/20 bg-[#0A0A0A]/80 px-3 py-1.5 backdrop-blur-md">
+                        <span className="relative flex h-1.5 w-1.5">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#A8D5BA] opacity-75" />
+                          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#A8D5BA] shadow-[0_0_8px_rgba(168,213,186,0.8)]" />
+                        </span>
+                        <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#E8DFD0]">Open to opportunities</span>
+                      </div>
+                      <div className="absolute right-3 top-3 rounded-md border border-[#F5F0E6]/30 bg-[#0A0A0A]/75 px-2 py-1 text-[8px] font-bold tracking-[0.18em] text-[#E8DFD0] backdrop-blur-md">
+                        ID · 2026
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-[1fr_auto] items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-3">
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#888888]">Specialization</p>
+                        <p className="mt-1 text-xs font-bold text-[#F5F0E6]">Backend Developer</p>
+                        <p className="mt-1 text-[10px] text-[#B8B0A0]">Logic · Data · Reliable Systems</p>
+                      </div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#F5F0E6]/20 bg-[#F5F0E6]/10">
+                        <span className="font-mono text-sm font-black text-[#F5F0E6]">{"</>"}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex items-end justify-between px-1 pb-1">
+                      <div>
+                        <div className="flex h-5 items-stretch gap-[3px] opacity-80">
+                          {[2, 4, 1, 3, 2, 5, 1, 3, 2, 4, 1, 3, 2, 5].map((w, i) => (
+                            <span
+                              key={i}
+                              style={{ width: w }}
+                              className={i % 4 === 2 ? "bg-[#F5F0E6]" : i % 2 ? "bg-[#666666]" : "bg-[#888888]"}
+                            />
+                          ))}
+                        </div>
+                        <p className="mt-1 text-[8px] font-mono tracking-[0.2em] text-[#666666]">JL · PORTFOLIO</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#666666]">Status</p>
+                        <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-[#F5F0E6]">Backend.dev</p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="mt-1 text-[8px] font-mono tracking-[0.2em] text-[#666666]">JL · PORTFOLIO</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.2em] text-[#666666]">Status</p>
-                  <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-[#F5F0E6]">Backend.dev</p>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             </motion.div>
           </div>
 
-          {/* Hero text */}
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            animate="show"
-            className="order-2 lg:order-1 space-y-6 text-center lg:text-left w-full"
-          >
-            <motion.p variants={fadeUp} className="text-[#E8DFD0] text-xs sm:text-sm font-semibold tracking-[0.25em] uppercase">
+          {/* Hero text — plays in sequence */}
+          <div className="order-2 lg:order-1 space-y-6 text-center lg:text-left w-full">
+            {/* 1. WELCOME: slow rise */}
+            <motion.p
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.3, delay: T.welcome, ease: EASE }}
+              className="text-[#E8DFD0] text-xs sm:text-sm font-semibold tracking-[0.25em] uppercase"
+            >
               WELCOME TO MY PORTFOLIO
             </motion.p>
-            <motion.h1 variants={fadeUp} className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight leading-tight">
+
+            {/* 2. Hi, I'm Janine: bouncy */}
+            <motion.h1
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                y: { type: "spring", bounce: 0.55, duration: 1.1, delay: T.name },
+                opacity: { duration: 0.5, delay: T.name },
+              }}
+              className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight leading-tight"
+            >
               Hi, I&apos;m{" "}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5F0E6] to-[#E8DFD0]">Janine</span>
             </motion.h1>
-            <motion.p variants={fadeUp} className="text-lg sm:text-2xl text-[#E8DFD0] font-medium min-h-[2rem]">
-              <Typewriter words={ROLES} />
+
+            {/* 3. Typed role */}
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: T.typing - 0.4 }}
+              className="text-lg sm:text-2xl text-[#E8DFD0] font-medium min-h-[2rem]"
+            >
+              <Typewriter words={ROLES} active={typing} onWordComplete={handleWordComplete} />
             </motion.p>
-            <motion.p variants={fadeUp} className="text-[#D8D0C0] text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
+
+            {/* 4. Tagline: blur → clear + slight rise, only after the first word is typed; then it stays */}
+            <motion.p
+              initial={{ opacity: 0, y: 18, filter: "blur(12px)" }}
+              animate={
+                firstWordDone
+                  ? { opacity: 1, y: 0, filter: "blur(0px)" }
+                  : { opacity: 0, y: 18, filter: "blur(12px)" }
+              }
+              transition={{ duration: 1.3, ease: EASE }}
+              className="text-[#D8D0C0] text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0"
+            >
               Your Vision, My Code.
             </motion.p>
-            <motion.div variants={fadeUp} className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-2">
+
+            {/* 5. Buttons appear last */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={firstWordDone ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+              transition={{ duration: 0.8, ease: EASE, delay: firstWordDone ? 0.9 : 0 }}
+              className="flex flex-col sm:flex-row justify-center lg:justify-start gap-4 pt-2"
+            >
               <motion.a
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.96 }}
                 href="#contact"
-                className="px-8 py-3.5 rounded-full bg-[#F5F0E6] text-[#0F0F0F] font-bold hover:bg-[#E8DFD0] transition-colors shadow-[0_0_20px_rgba(245,240,230,0.3)] text-center"
+                style={{ boxShadow: "0 0 20px rgba(245,240,230,0.3)" }}
+                whileHover={{ y: -4, scale: 1.04, boxShadow: "0 0 36px rgba(245,240,230,0.6)", filter: "brightness(1.08)" }}
+                whileTap={{ scale: 0.93, y: 0 }}
+                transition={{ type: "spring", stiffness: 380, damping: 22 }}
+                className="px-8 py-3.5 rounded-full bg-[#F5F0E6] text-[#0F0F0F] font-bold text-center"
               >
                 Hire Me
               </motion.a>
               <motion.a
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.96 }}
                 href="#projects"
-                className="px-8 py-3.5 rounded-full border border-[#F5F0E6]/50 hover:border-[#F5F0E6] hover:bg-[#F5F0E6]/5 text-[#F5F0E6] font-bold transition-colors text-center"
+                style={{ borderColor: "rgba(245,240,230,0.5)", boxShadow: "0 0 0px rgba(245,240,230,0)" }}
+                whileHover={{
+                  y: -4,
+                  scale: 1.03,
+                  borderColor: "rgba(245,240,230,1)",
+                  boxShadow: "0 0 20px rgba(245,240,230,0.2)",
+                }}
+                whileTap={{ scale: 0.93, y: 0 }}
+                transition={{ type: "spring", stiffness: 380, damping: 22 }}
+                className="px-8 py-3.5 rounded-full border text-[#F5F0E6] font-bold text-center"
               >
                 View Projects
               </motion.a>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Scroll hint */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.6 }}
+          transition={{ delay: T.typing + 3 }}
           className="hidden lg:flex justify-center mt-10"
         >
           <div className="flex h-10 w-6 items-start justify-center rounded-full border border-[#F5F0E6]/40 p-1.5">
@@ -821,7 +1067,6 @@ function ProjectCard({
   const [hoverRating, setHoverRating] = useState(0);
   const [showComments, setShowComments] = useState(false);
   const [myUserId, setMyUserId] = useState("");
-  const initialised = useRef(false);
 
   useEffect(() => {
     let userId = localStorage.getItem("portfolio_user_id");
@@ -840,7 +1085,6 @@ function ProjectCard({
     } else {
       setComments(defaultComments);
     }
-    initialised.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
