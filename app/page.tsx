@@ -33,7 +33,9 @@ const NAV_ITEMS = [
   { name: "CONTACT", id: "contact" },
 ];
 
-const DEVICON = "https://cdn.jsdelivr.net/gh/devicons/devicon@v2.16.0/icons";
+const DEVICON = "https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons";
+const SI = "https://cdn.simpleicons.org";
+const LINKEDIN_ICON = "https://cdn-icons-png.flaticon.com/512/174/174857.png";
 
 /* invert = logo is black by default, so flip it to show on the dark theme */
 const TECHS = [
@@ -53,12 +55,31 @@ const TECHS = [
 ];
 
 const SOCIALS = [
-  { name: "GitHub", url: "https://github.com/jvhluces", icon: `${DEVICON}/github/github-original.svg` },
-  { name: "LinkedIn", url: "https://www.linkedin.com/in/janine-luces-494637423", icon: `${DEVICON}/linkedin/linkedin-original.svg` },
-  { name: "Facebook", url: "https://web.facebook.com/jvhnine", icon: `${DEVICON}/facebook/facebook-original.svg` },
-  { name: "Instagram", url: "https://www.instagram.com/jvh_ninn/", icon: `${DEVICON}/instagram/instagram-original.svg` },
+  { 
+    name: "GitHub", 
+    url: "https://github.com/jvhluces", 
+    icon: `${DEVICON}/github/github-original.svg`,
+    invert: true
+  },
+  { 
+    name: "LinkedIn", 
+    url: "https://www.linkedin.com/in/janine-luces-494637423", 
+    icon: LINKEDIN_ICON,
+    invert: true  // ✅ gagana pa rin para maging puti
+  },
+  { 
+    name: "Facebook", 
+    url: "https://web.facebook.com/jvhnine", 
+    icon: `${SI}/facebook`,
+    invert: true
+  },
+  { 
+    name: "Instagram", 
+    url: "https://www.instagram.com/jvh_ninn/", 
+    icon: `${SI}/instagram`,
+    invert: true
+  },
 ];
-
 const ROLES = ["Aspiring Backend Developer", "API Builder", "Database Designer"];
 
 /* ---------- Small helpers ---------- */
