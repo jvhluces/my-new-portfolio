@@ -17,15 +17,51 @@ import emailjs from "@emailjs/browser";
 /* ---------- Shared animation config ---------- */
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/* 1. Smooth rise + fade in: starts a little below and blurred → slowly clears */
 const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 32 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: EASE } },
+  hidden: { opacity: 0, y: 40, filter: "blur(10px)" },
+  show: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.9, ease: EASE } },
+};
+
+/* 5. Slow fade in (no movement): headers and big titles */
+const fadeIn: Variants = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { duration: 0.8, ease: "easeOut" } },
+};
+
+/* 2 + 3. Cards: staggered, rise + gentle scale 0.96 → 1 */
+const cardIn: Variants = {
+  hidden: { opacity: 0, y: 40, scale: 0.96, filter: "blur(10px)" },
+  show: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)", transition: { duration: 0.9, ease: EASE } },
 };
 
 const stagger: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+  show: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
 };
+
+/* gap between cards: 0.15s */
+const gridStagger: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.15, delayChildren: 0.05 } },
+};
+
+/* gap between tech icons: 0.1s */
+const techStagger: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
+};
+
+/* 4 + 6. Soft hover lift (-4px) + gentle cream glow that slowly fades in and out */
+const CARD_LOW = "0 0 0px rgba(245,240,230,0)";
+const CARD_HIGH = "0 10px 34px rgba(245,240,230,0.16)";
+const GLOW_T = {
+  boxShadow: { duration: 2.4, repeat: Infinity, ease: "easeInOut" },
+  y: { type: "spring", stiffness: 260, damping: 22 },
+} as const;
+
+const BTN_LOW = "0 0 20px rgba(245,240,230,0.25)";
+const BTN_HIGH = "0 0 40px rgba(245,240,230,0.55)";
 
 /* Navbar: logo + menu appear first, one after another */
 const navParent: Variants = {
@@ -225,7 +261,7 @@ function CodeBackdrop({ reduce }: { reduce: boolean | null }) {
 /* ---------- Small helpers ---------- */
 function SectionHeader({ eyebrow, first, second, text }: { eyebrow: string; first: string; second: string; text?: string }) {
   return (
-    <motion.div variants={fadeUp}>
+    <motion.div variants={fadeIn}>
       <p className="text-[#E8DFD0] font-medium tracking-[0.2em] uppercase text-xs sm:text-sm">{eyebrow}</p>
       <h2 className="text-4xl lg:text-5xl font-extrabold mt-2 tracking-tight">
         {first}{" "}
@@ -238,7 +274,11 @@ function SectionHeader({ eyebrow, first, second, text }: { eyebrow: string; firs
         transition={{ duration: 0.8, ease: EASE, delay: 0.3 }}
         className="mt-4 h-[2px] w-20 origin-left bg-gradient-to-r from-[#F5F0E6] to-transparent"
       />
-      {text && <p className="text-[#D8D0C0] text-base mt-4 max-w-xl leading-relaxed">{text}</p>}
+      {text && (
+        <motion.p variants={fadeUp} className="text-[#D8D0C0] text-base mt-4 max-w-xl leading-relaxed">
+          {text}
+        </motion.p>
+      )}
     </motion.div>
   );
 }
@@ -248,7 +288,7 @@ function TechTile({ name, icon, invert, index }: { name: string; icon: string; i
     <motion.div
       variants={{
         hidden: { opacity: 0, y: 24, scale: 0.85 },
-        show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.5, ease: EASE } },
+        show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.6, ease: EASE } },
       }}
       whileHover={{ y: -8, scale: 1.06 }}
       transition={{ type: "spring", stiffness: 300, damping: 18 }}
@@ -361,6 +401,11 @@ export default function Home() {
       }
     : { type: "spring" as const, stiffness: 140, damping: 16 };
 
+  /* gentle pulse (1 → 1.03 → 1) for important buttons */
+  const pulse = reduce
+    ? undefined
+    : { scale: [1, 1.03, 1], transition: { duration: 3.2, repeat: Infinity, ease: "easeInOut" as const, delay: 3 } };
+
   return (
     <main className="relative min-h-screen overflow-x-hidden bg-[#0F0F0F] text-[#F5F0E6] selection:bg-[#E8DFD0] selection:text-[#0F0F0F] pt-20">
       {/* Scroll progress bar */}
@@ -421,7 +466,7 @@ export default function Home() {
           </div>
 
           <motion.div variants={navChild} className="hidden md:block">
-            {/* "Hire Me" gives a faint flash every few seconds */}
+            {/* "Hire Me" gives a faint flash + soft pulse every few seconds */}
             <motion.a
               href="#contact"
               initial={{ boxShadow: "0 0 15px rgba(245,240,230,0.2)" }}
@@ -434,6 +479,7 @@ export default function Home() {
                         "0 0 30px rgba(245,240,230,0.6)",
                         "0 0 15px rgba(245,240,230,0.2)",
                       ],
+                      scale: [1, 1.03, 1],
                     }
               }
               transition={{ duration: 1.6, repeat: Infinity, repeatDelay: 4.5, ease: "easeInOut", delay: 5 }}
@@ -688,6 +734,7 @@ export default function Home() {
               <motion.a
                 href="#contact"
                 style={{ boxShadow: "0 0 20px rgba(245,240,230,0.3)" }}
+                animate={pulse}
                 whileHover={{ y: -4, scale: 1.04, boxShadow: "0 0 36px rgba(245,240,230,0.6)", filter: "brightness(1.08)" }}
                 whileTap={{ scale: 0.93, y: 0 }}
                 transition={{ type: "spring", stiffness: 380, damping: 22 }}
@@ -731,7 +778,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* PROJECTS SECTION */}
+      {/* PROJECTS SECTION — Fade Up + Staggered + Scale + Soft Hover Lift */}
       <section
         id="projects"
         className="relative z-10 min-h-screen flex flex-col justify-center max-w-7xl mx-auto px-6 md:px-8 py-20 border-t border-[#2A2A2A]/60 scroll-mt-20"
@@ -749,7 +796,14 @@ export default function Home() {
             second="Gallery"
             text="Explore my repositories and leave real feedback or comments below!"
           />
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* items-start: each card keeps its OWN height, so opening one card's comments never stretches the others */}
+          <motion.div
+            variants={gridStagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start"
+          >
             <ProjectCard
               projectId="python-hand-tracking"
               title="Python Hand Tracking System"
@@ -777,11 +831,11 @@ export default function Home() {
               imageSrc="/projects/event-management.png"
               defaultComments={[]}
             />
-          </div>
+          </motion.div>
         </motion.div>
       </section>
 
-      {/* SERVICES SECTION */}
+      {/* SERVICES SECTION — Scale + Staggered + Glow on hover */}
       <section
         id="services"
         className="relative z-10 min-h-screen flex flex-col justify-center max-w-7xl mx-auto px-6 md:px-8 py-20 border-t border-[#2A2A2A]/60 scroll-mt-20"
@@ -799,7 +853,13 @@ export default function Home() {
             second="Services"
             text="Building reliable backend systems, clean application logic, and functional web solutions powered by PHP, Python, and modern web tools."
           />
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <motion.div
+            variants={gridStagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
             {[
               {
                 Icon: Link2Icon,
@@ -819,12 +879,12 @@ export default function Home() {
             ].map(({ Icon, title, text }) => (
               <motion.div
                 key={title}
-                variants={fadeUp}
-                whileHover={{ y: -10 }}
-                transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                className="group relative overflow-hidden bg-[#1A1A1A]/70 border border-[#2A2A2A] p-8 rounded-3xl backdrop-blur-sm hover:border-[#F5F0E6]/40 hover:shadow-[0_0_25px_rgba(245,240,230,0.15)] transition-colors space-y-4"
+                variants={cardIn}
+                style={{ boxShadow: CARD_LOW }}
+                whileHover={{ y: -4, boxShadow: [CARD_LOW, CARD_HIGH, CARD_LOW], transition: GLOW_T }}
+                className="group relative overflow-hidden bg-[#1A1A1A]/70 border border-[#2A2A2A] p-8 rounded-3xl backdrop-blur-sm hover:border-[#F5F0E6]/40 transition-colors duration-700 space-y-4"
               >
-                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#F5F0E6]/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#F5F0E6]/10 blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
                 <motion.div
                   whileHover={{ rotate: [0, -8, 8, 0] }}
                   transition={{ duration: 0.5 }}
@@ -836,11 +896,11 @@ export default function Home() {
                 <p className="text-[#D8D0C0] text-sm leading-relaxed">{text}</p>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </motion.div>
       </section>
 
-      {/* ABOUT SECTION */}
+      {/* ABOUT SECTION — Fade In (text) + Staggered tech grid */}
       <section
         id="about"
         className="relative z-10 min-h-screen flex flex-col justify-center max-w-7xl mx-auto px-6 md:px-8 py-20 border-t border-[#2A2A2A]/60 scroll-mt-20"
@@ -853,25 +913,35 @@ export default function Home() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
         >
           <div className="space-y-6">
-            <motion.p variants={fadeUp} className="text-[#E8DFD0] font-medium tracking-[0.2em] uppercase text-xs sm:text-sm">
+            <motion.p variants={fadeIn} className="text-[#E8DFD0] font-medium tracking-[0.2em] uppercase text-xs sm:text-sm">
               ABOUT ME
             </motion.p>
-            <motion.h2 variants={fadeUp} className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight">
+            <motion.h2 variants={fadeIn} className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-tight tracking-tight">
               Building Solid Software with <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#F5F0E6] to-[#E8DFD0]">
                 Clean Code & Practical Logic
               </span>
             </motion.h2>
-            <motion.p variants={fadeUp} className="text-[#D8D0C0] text-base leading-relaxed">
+            <motion.p variants={fadeIn} className="text-[#D8D0C0] text-base leading-relaxed">
               I&apos;m a passionate developer with hands-on experience in backend and web development using modern frameworks and core programming languages. I enjoy solving logic problems, writing structured code, and continuously learning new technologies to build practical digital applications.
             </motion.p>
             <motion.div variants={fadeUp} className="pt-2">
               <motion.a
-                whileHover={{ scale: 1.05, y: -2 }}
-                whileTap={{ scale: 0.95 }}
                 href="/JANINE_LUCES_CV.pdf"
                 download="JANINE_LUCES_CV.pdf"
-                className="group inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#F5F0E6] to-[#E8DFD0] text-[#0F0F0F] font-bold shadow-[0_0_20px_rgba(245,240,230,0.25)] hover:shadow-[0_0_30px_rgba(245,240,230,0.4)] transition-shadow cursor-pointer"
+                style={{ boxShadow: BTN_LOW }}
+                whileHover={{
+                  scale: 1.05,
+                  y: -2,
+                  boxShadow: [BTN_LOW, BTN_HIGH, BTN_LOW],
+                  transition: {
+                    scale: { type: "spring", stiffness: 300, damping: 20 },
+                    y: { type: "spring", stiffness: 300, damping: 20 },
+                    boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                  },
+                }}
+                whileTap={{ scale: 0.95 }}
+                className="group inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-[#F5F0E6] to-[#E8DFD0] text-[#0F0F0F] font-bold cursor-pointer"
               >
                 <Download className="w-5 h-5 transition-transform group-hover:translate-y-0.5" />
                 Download CV
@@ -889,7 +959,10 @@ export default function Home() {
               Technologies & Tools I Use
             </h3>
             <motion.div
-              variants={{ hidden: {}, show: { transition: { staggerChildren: 0.06, delayChildren: 0.2 } } }}
+              variants={techStagger}
+              initial="hidden"
+              whileInView="show"
+              viewport={{ once: true, amount: 0.2 }}
               className="relative grid grid-cols-3 sm:grid-cols-4 gap-3 sm:gap-4"
             >
               {TECHS.map((t, i) => (
@@ -900,7 +973,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* CONTACT SECTION */}
+      {/* CONTACT SECTION — Fade Up + Glow on buttons */}
       <section
         id="contact"
         className="relative z-10 min-h-screen flex flex-col justify-center max-w-7xl mx-auto px-6 md:px-8 py-24 border-t border-[#2A2A2A]/60 scroll-mt-20"
@@ -937,7 +1010,7 @@ export default function Home() {
                   </>
                 );
                 const cls =
-                  "group flex items-center gap-4 p-5 rounded-2xl bg-[#1A1A1A]/85 border border-[#2A2A2A] transition-all";
+                  "group flex items-center gap-4 p-5 rounded-2xl bg-[#1A1A1A]/85 border border-[#2A2A2A] transition-all duration-500";
                 return (
                   <motion.div key={label} variants={fadeUp} whileHover={href ? { x: 6 } : undefined}>
                     {href ? (
@@ -964,7 +1037,7 @@ export default function Home() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={s.name}
-                    className="group w-12 h-12 rounded-2xl bg-[#1A1A1A]/85 border border-[#2A2A2A] flex items-center justify-center hover:border-[#F5F0E6]/50 hover:shadow-[0_0_15px_rgba(245,240,230,0.25)] transition-colors"
+                    className="group w-12 h-12 rounded-2xl bg-[#1A1A1A]/85 border border-[#2A2A2A] flex items-center justify-center hover:border-[#F5F0E6]/50 hover:shadow-[0_0_15px_rgba(245,240,230,0.25)] transition-colors duration-500"
                   >
                     <img
                       src={s.icon}
@@ -1004,12 +1077,26 @@ export default function Home() {
                   className={`${inputClass} resize-none`}
                 />
               </div>
+              {/* gentle pulse + slow glow on hover */}
               <motion.button
-                whileHover={{ scale: sending ? 1 : 1.02 }}
-                whileTap={{ scale: sending ? 1 : 0.98 }}
                 type="submit"
                 disabled={sending}
-                className="w-full py-3.5 rounded-xl bg-[#F5F0E6] hover:bg-[#E8DFD0] disabled:opacity-70 disabled:cursor-not-allowed text-[#0F0F0F] font-bold shadow-[0_0_20px_rgba(245,240,230,0.3)] transition-colors mt-2 cursor-pointer flex items-center justify-center gap-2"
+                style={{ boxShadow: BTN_LOW }}
+                animate={sending ? undefined : pulse}
+                whileHover={
+                  sending
+                    ? undefined
+                    : {
+                        scale: 1.04,
+                        boxShadow: [BTN_LOW, BTN_HIGH, BTN_LOW],
+                        transition: {
+                          scale: { type: "spring", stiffness: 300, damping: 20 },
+                          boxShadow: { duration: 2, repeat: Infinity, ease: "easeInOut" },
+                        },
+                      }
+                }
+                whileTap={sending ? undefined : { scale: 0.97 }}
+                className="w-full py-3.5 rounded-xl bg-[#F5F0E6] hover:bg-[#E8DFD0] disabled:opacity-70 disabled:cursor-not-allowed text-[#0F0F0F] font-bold transition-colors mt-2 cursor-pointer flex items-center justify-center gap-2"
               >
                 <motion.span
                   animate={sending ? { x: [0, 6, 0], y: [0, -6, 0] } : { x: 0, y: 0 }}
@@ -1119,10 +1206,10 @@ function ProjectCard({
 
   return (
     <motion.div
-      variants={fadeUp}
-      whileHover={{ y: -6 }}
-      transition={{ type: "spring", stiffness: 260, damping: 22 }}
-      className="bg-[#1A1A1A]/70 border border-[#2A2A2A] rounded-3xl overflow-hidden p-6 flex flex-col justify-between hover:border-[#F5F0E6]/40 hover:shadow-[0_0_25px_rgba(245,240,230,0.15)] transition-colors"
+      variants={cardIn}
+      style={{ boxShadow: CARD_LOW }}
+      whileHover={{ y: -4, boxShadow: [CARD_LOW, CARD_HIGH, CARD_LOW], transition: GLOW_T }}
+      className="bg-[#1A1A1A]/70 border border-[#2A2A2A] rounded-3xl overflow-hidden p-6 flex flex-col justify-between hover:border-[#F5F0E6]/40 transition-colors duration-700"
     >
       <div className="space-y-4">
         {imageSrc ? (
@@ -1154,8 +1241,10 @@ function ProjectCard({
         <h3 className="text-2xl font-bold text-[#F5F0E6]">{title}</h3>
         <p className="text-[#D8D0C0] text-sm leading-relaxed">{description}</p>
 
+        {/* Each card has its own toggle: only THIS card's comments open */}
         <button
-          onClick={() => setShowComments(!showComments)}
+          type="button"
+          onClick={() => setShowComments((v) => !v)}
           className="text-xs font-semibold text-[#F5F0E6] hover:underline flex items-center gap-1 focus:outline-none"
           aria-expanded={showComments}
         >
