@@ -994,7 +994,6 @@ export default function Home() {
             />
             <div className="space-y-4">
               {[
-                { Icon: Mail, label: "My Email", value: "janineluces49@gmail.com", href: "mailto:janineluces49@gmail.com" },
                 { Icon: MapPin, label: "My Address", value: "Daraga, Albay, Philippines" },
                 { Icon: Phone, label: "Phone / SMS", value: "+63 938 277 5728", href: "sms:+639382775728" },
               ].map(({ Icon, label, value, href }) => {
@@ -1241,7 +1240,7 @@ function ProjectCard({
         <h3 className="text-2xl font-bold text-[#F5F0E6]">{title}</h3>
         <p className="text-[#D8D0C0] text-sm leading-relaxed">{description}</p>
 
-        {/* Each card has its own toggle: only THIS card's comments open */}
+ 
         <button
           type="button"
           onClick={() => setShowComments((v) => !v)}
